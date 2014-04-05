@@ -23,12 +23,13 @@ static const QStringList JOB_FILENAMES(QStringList()
 
 FakeMonitor::FakeMonitor(HostInfoManager* manager, QObject* parent)
     : Monitor(manager, parent)
-    , m_view(0)
     , m_updateTimer(new QTimer(this))
 {
     m_updateTimer->setInterval(1000);
     m_updateTimer->start();
     connect(m_updateTimer, SIGNAL(timeout()), SLOT(update()));
+
+    setSchedulerState(true);
 
     init();
 }
@@ -75,17 +76,8 @@ void FakeMonitor::init()
     }
 }
 
-void FakeMonitor::setCurrentView(StatusView *view)
-{
-    m_view = view;
-    m_view->updateSchedulerState(true);
-}
-
 void FakeMonitor::update()
 {
-    if (!m_view)
-        return;
-
     // create job
     const int clientId = HOST_IDS[JOB_ID % HOST_IDS.size()];
     const QString fileName = JOB_FILENAMES[JOB_ID % JOB_FILENAMES.length()];
@@ -96,7 +88,7 @@ void FakeMonitor::update()
     job.setState(Job::Compiling);
     const int serverId = HOST_IDS[(JOB_ID+1) % HOST_IDS.size()];
     job.setServer(serverId);
-    m_view->update(job);
+    emit jobUpdated(job);
     m_activeJobs << job;
 
     // clean up old jobs
@@ -104,14 +96,14 @@ void FakeMonitor::update()
         Job job = m_activeJobs.first();
         m_activeJobs.removeFirst();
         job.setState(Job::Finished);
-        m_view->update(job);
+        emit jobUpdated(job);
     }
 
     Q_FOREACH(const HostInfo* info, hostInfoManager()->hostMap().values()) {
         if ( info->isOffline() ) {
-            m_view->removeNode( info->id() );
+            emit nodeRemoved(info->id());
         } else {
-            m_view->checkNode( info->id() );
+            emit nodeUpdated(info->id());
         }
     }
 }
