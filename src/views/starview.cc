@@ -545,6 +545,9 @@ StarViewGraphicsView::StarViewGraphicsView(QGraphicsScene *scene, StarView *star
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     scene->setSceneRect(0, 0, width(), height());
 
+    // add Background color
+    setBackgroundBrush(QBrush(Qt::black, Qt::SolidPattern));
+
     // add scheduler item
     m_schedulerItem = new HostItem(QString());
     scene->addItem(m_schedulerItem);
